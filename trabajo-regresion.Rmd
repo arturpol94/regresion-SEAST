@@ -9,6 +9,7 @@ Apellidos:
 ```{r preliminares}
 ## cargamos los paquetes dplyr, ggplot2
 library(dplyr)
+library(ggplot2)
 ```
 
 # Introducción
@@ -32,7 +33,7 @@ Vamos a empezar con un conjunto simplificado donde sólo consideramos en cuanto 
 Cargar los datos en un dataframe llamado **GradosTelecoSimple**
 ```{r}
 ## Completar aqui"
-
+GradosTelecoSimple  <- read.table("./data/notamediagradosETSIT-simple.csv", sep = ",", header = TRUE)
 ```
 
 La nota media está calculada con las calificaciones de cada asignatura en una escala que va de 1 a 4 (1 es "Aprobado"", 2 "Notable", 3 "Sobresaliente", 4 "Matrícula de Honor")
@@ -43,6 +44,8 @@ Llevar a cabo la representación gráfica de la nota media al egresar en funció
 
 ```{r}
 ## Completar aqui"
+ggplot(data = GradosTelecoSimple, aes(x = PAU_CALIFICACION_NOTA_MATERIA, y = notamedia)) +
+geom_point()
 
 ```
 
@@ -50,7 +53,8 @@ Llevar a cabo la representación gráfica de la nota media al egresar en funció
 
 ```{r}
 # Completar aquí
-
+ggplot(data = GradosTelecoSimple, aes(x = PAU_CALIFICACION_NOTA_MATERIA_DECIL, y = notamedia)) +
+geom_point()
 ```
 
 ## Ajuste de una recta, usando el algoritmo de gradiente
@@ -71,8 +75,8 @@ Definir una variable y que contenga los valores de notamedia, y la matrix X que 
 $$notamedia=\theta_0+\theta_1PAU\_CALIFICACION\_NOTA\_MATERIA$$
 
 ```{r}
-# Completar aquí
-
+X<- as.matrix(cbind(1, GradosTelecoSimple$PAU_CALIFICACION_NOTA_MATERIA))
+y  <- as.matrix(GradosTelecoSimple$notamedia)
 ```
 
 Vamos ahora a implementar la función coste que llamaremos J así como el gradiente de J, que llamaremos gradJ. De paso, aprenderemos a definir una función en R.
@@ -81,10 +85,12 @@ Vamos ahora a implementar la función coste que llamaremos J así como el gradie
 J <- function(theta)
   {
   # teneís que calcular el coste aquí
-  
+   coste<- 1 / length(y)*
+      t(y- X %*% theta) %*% (y-X %*% theta)
 
   # fin completar
-  return(coste)}
+  return(coste)
+  }
 ```
 
 El gradiente de la función coste se puede escribir de manera compacta (ver transparencias) 
@@ -93,8 +99,9 @@ $$\nabla J(\theta)=\frac{2}{n} \mathbf{X}^T\cdot \left(\mathbf{X}\theta-y\right)
 ```{r}
 gradJ <- function(theta)
   {
-  ## completar aquí para devolver el vector gradiente
-
+  gradJ<- 2/length(y) * t(X) %*% ( X%*%theta  - y)
+  
+  return(gradJ)
   }
 ```
 
@@ -154,13 +161,20 @@ Tenéis que modificar ahora vuestra implementación del algoritmo del gradiente 
 
 
 ```{r}
-## Completar aquí
+theta=thetainicial
+for (i in 2:maxiter)
+  {
+    
+    theta <- theta - alpha * gradJ(theta)
+    monitor[i,]=c(i, theta, J(theta), gradJ(theta), alpha)
+  }
 
 ```
 
 Podemos ahora representar gráficamente la evolución de la función coste en función de la iteración del algoritmo:
 ```{r}
-## Completar aquí
+ggplot(data = monitor, aes(x = iter, y = J)) +
+geom_line()
 
 ```
 
@@ -170,7 +184,9 @@ Observamos un decrecimiento brusco de la función coste en las primeras iteracio
 Para comprobarlo, tenéis que representar la evolución del coste pero entre la iteración 50 y la iteración 3000:
 
 ```{r}
-## completar aquí...
+
+ggplot(data = monitor, aes(x = iter, y = J)) +
+geom_line()+ylim(0.142,0.147)
 
 ```
 
@@ -195,16 +211,41 @@ monitor[1,] <- c(0, thetainicial, J(thetainicial), gradJ(thetainicial), alpha)
 ```
 
 ```{r}
-## Completar aqui, bucle alpha para implementación gradiente
-
+theta=thetainicial
+for(j in 1:3)
+      {
+  theta=thetainicial
+  for (i in 2:maxiter)
+     {
+    
+      if (j==1)
+       {
+        alpha=0.001
+      theta <- theta - alpha * gradJ(theta)
+      monitor[i,]=c(i, theta, J(theta), gradJ(theta), alpha)
+        }
+      if (j==2)
+       {
+        alpha=0.003
+      theta <- theta - alpha * gradJ(theta)
+      monitor[i+3000,]=c(i, theta, J(theta), gradJ(theta), alpha)
+        }
+      if (j==3)
+       {
+        alpha=0.01
+      theta <- theta - alpha * gradJ(theta)
+      monitor[i+6000,]=c(i, theta, J(theta), gradJ(theta), alpha)
+        }
+    }
+  }
 ```
 
 Ahora vamos a representar solamente para iter superior a 50, tres líneas de evolución de J en función de la iteración, una para cada valor de $\alpha$.
 
 ```{r}
 monitor$alpha=factor(monitor$alpha)
-## completar aquí, un ggplot de J en función de iter, (iter >50)
-
+ggplot(data = monitor, aes(x = iter, y = J,color=alpha)) +
+geom_line() +ylim(0.13,0.146)
 ```
 
 Nos queda probar con alpha=0.03 por ejemplo, pero usaremos menos iteraciones..
@@ -222,13 +263,18 @@ monitor[1,] <- c(0, thetainicial, J(thetainicial), gradJ(thetainicial), alpha)
 
 
 ```{r}
-## Completar aquí"
-
+theta=thetainicial
+  for (i in 2:maxiter)
+     {
+      theta <- theta - alpha * gradJ(theta)
+      monitor[i,]=c(i, theta, J(theta), gradJ(theta), alpha)
+    }
 ```
 Representar gráficamente la evolución del coste para estas 50 iteraciones...
 
 ```{r}
-## Completar aquí: ggplot evolución del coste en función de iter...
+ggplot(data = monitor, aes(x = iter, y = J)) +
+geom_line()
 
 ```
 
@@ -248,8 +294,12 @@ monitor[1,]=c(0, thetainicial, J(thetainicial), gradJ(thetainicial), alpha)
 Para iterar el algoritmo incluyendo las condiciones que i debe ser inferior o igual a maxiter, y que deltaJ sea superior a 10^(-6), usamos la instrucción while (ver la ayuda)
 
 ```{r}
-## Completar aquí"
-
+  theta=thetainicial
+  for (i in 2:maxiter)
+    {
+      theta <- theta - alpha * gradJ(theta)
+      monitor[i,]=c(i, theta, J(theta), gradJ(theta), alpha)
+    }
 ```
 
 
@@ -274,7 +324,8 @@ Basándose en las transparencias, introducir un objeto llamado notamediagrados.l
 $$notamedia=\theta_0+\theta_1PAU\_CALIFICACION\_NOTA\_MATERIA$$
 
 ```{r}
-## Completar aquí: notamediagrados.lm
+## Completar aquí:
+notamediagrados.lm <- lm(formula = notamedia ~ PAU_CALIFICACION_NOTA_MATERIA, data = GradosTelecoSimple)
 
 ```
 
@@ -293,8 +344,15 @@ Comentarios: completar aquí...
 Usando la instrucción residuals aplicada a notamediagrados.lm, calcular el mínimo de la función coste que podíamos perseguir con el algoritmo del gradiente... Comparar su valor con el que obtuvimos...
 
 ```{r}
-## completar aquí
-
+  theta=thetainicial
+  for (i in 2:maxiter)
+    {
+      
+      theta <- theta - alpha * gradJ(theta)
+      monitor[i,]=c(i, theta, J(theta), gradJ(theta), alpha)
+      min <- min(monitor)
+      
+    }
 ```
 
 
